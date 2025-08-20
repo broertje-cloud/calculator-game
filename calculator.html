@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator with Mini-Game</title>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .calculator {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 20rem;
+        }
+        #display {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1.5rem;
+            text-align: right;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            background-color: #f9fafb;
+            box-sizing: border-box;
+        }
+        #game-info {
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #4b5563;
+        }
+        #difficulty-select {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        button {
+            padding: 1rem;
+            font-size: 1.25rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: #f9fafb;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #e5e7eb;
+        }
+        .operator {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .operator:hover {
+            background-color: #2563eb;
+        }
+        .equals {
+            background-color: #10b981;
+            color: white;
+            grid-column: span 2;
+        }
+        .equals:hover {
+            background-color: #059669;
+        }
+        .clear {
+            background-color: #ef4444;
+            color: white;
+        }
+        .clear:hover {
+            background-color: #dc2626;
+        }
+        .game {
+            background-color: #8b5cf6;
+            color: white;
+        }
+        .game:hover {
+            background-color: #7c3aed;
+        }
+        .help {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .help:hover {
+            background-color: #d97706;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" value="0" readonly>
+        <select id="difficulty-select" onchange="changeDifficulty()">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <div id="game-info">Calculator Mode | Score: 0</div>
+        <div class="buttons">
+            <button class="clear" onclick="clearDisplay()">C</button>
+            <button onclick="appendToDisplay('(')">(</button>
+            <button onclick="appendToDisplay(')')">)</button>
+            <button class="operator" onclick="appendToDisplay('/')">÷</button>
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button class="operator" onclick="appendToDisplay('-')">-</button>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+            <button onclick="appendToDisplay('0')">0</button>
+            <button class="help" onclick="showHelp()">Help</button>
+            <button class="equals" onclick="handleAction()">=</button>
+            <button class="game" onclick="toggleGameMode()">Game</button>
+        </div>
+    </div>
+    <script>
+        let display = document.getElementById('display');
+        let gameInfo = document.getElementById('game-info');
+        let difficultySelect = document.getElementById('difficulty-select');
+        let isGameMode = false;
+        let score = 0;
+        let currentProblem = '';
+        let correctAnswer = 0;
+        let difficulty = 'easy';
+        let currentInput = '0';
+
+        function appendToDisplay(value) {
+            if (isGameMode) {
+                if (currentInput === '0' || currentInput === 'Correct!' || currentInput === 'Incorrect!' || currentInput.startsWith('Answer:')) {
+                    currentInput = value;
+                } else {
+                    currentInput += value;
+                }
+                display.value = currentInput;
+            } else {
+                if (display.value === '0' && value !== '/') {
+                    display.value = value;
+                } else {
+                    display.value += value;
+                }
+            }
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            display.value = '0';
+            if (isGameMode) {
+                generateProblem();
+            }
+        }
+
+        function toggleGameMode() {
+            isGameMode = !isGameMode;
+            if (isGameMode) {
+                score = 0;
+                difficultySelect.style.display = 'block';
+                generateProblem();
+            } else {
+                difficultySelect.style.display = 'none';
+                gameInfo.textContent = 'Calculator Mode | Score: 0';
+                display.value = '0';
+                currentInput = '0';
+            }
+        }
+
+        function changeDifficulty() {
+            difficulty = difficultySelect.value;
+            score = 0;
+            generateProblem();
+        }
+
+        function generateProblem() {
+            let num1, num2, operator;
+            if (difficulty === 'easy') {
+                num1 = Math.floor(Math.random() * 10) + 1;
+                num2 = Math.floor(Math.random() * 10) + 1;
+                operator = ['+', '-'][Math.floor(Math.random() * 2)];
+            } else if (difficulty === 'medium') {
+                num1 = Math.floor(Math.random() * 20) + 1;
+                num2 = Math.floor(Math.random() * 20) + 1;
+                operator = ['+', '-', '*'][Math.floor(Math.random() * 3)];
+            } else {
+                num1 = Math.floor(Math.random() * 50) + 1;
+                num2 = Math.floor(Math.random() * 50) + 1;
+                operator = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
+            }
+
+            if (operator === '/') {
+                const product = num1 * num2;
+                currentProblem = `${product} ÷ ${num2}`;
+                correctAnswer = num1;
+            } else {
+                currentProblem = `${num1} ${operator} ${num2}`;
+                correctAnswer = eval(currentProblem.replace('×', '*').replace('÷', '/'));
+                if (operator === '/') {
+                    correctAnswer = Math.round(correctAnswer * 100) / 100;
+                }
+            }
+
+            gameInfo.textContent = `Game Mode (${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}) | Score: ${score} | Solve: ${currentProblem}`;
+            currentInput = '0';
+            display.value = '0';
+        }
+
+        function showHelp() {
+            if (!isGameMode) return;
+            score = Math.max(0, score - 1);
+            display.value = `Answer: ${correctAnswer}`;
+            gameInfo.textContent = `Game Mode (${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}) | Score: ${score} | Solve: ${currentProblem}`;
+            setTimeout(() => {
+                display.value = currentInput;
+            }, 2000);
+        }
+
+        function handleAction() {
+            if (isGameMode) {
+                checkAnswer();
+            } else {
+                calculate();
+            }
+        }
+
+        function calculate() {
+            try {
+                display.value = eval(display.value.replace('×', '*').replace('÷', '/'));
+                if (display.value === 'Infinity' || display.value === '-Infinity') {
+                    display.value = 'Error';
+                }
+            } catch (e) {
+                display.value = 'Error';
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseFloat(currentInput);
+            if (Math.abs(userAnswer - correctAnswer) < 0.01) {
+                score += 10;
+                currentInput = 'Correct!';
+                display.value = 'Correct!';
+                setTimeout(generateProblem, 1000);
+            } else {
+                score = Math.max(0, score - 5);
+                currentInput = `Correct Answer: ${correctAnswer}`;
+                display.value = currentInput;
+                setTimeout(generateProblem, 2000);
+            }
+            gameInfo.textContent = `Game Mode (${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}) | Score: ${score} | Solve: ${currentProblem}`;
+        }
+    </script>
+</body>
+</html>
